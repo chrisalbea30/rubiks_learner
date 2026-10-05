@@ -99,13 +99,12 @@ function Editor() {
       next[cursor] = color;
       setStickers(next);
       if (color) {
-        const n = firstEmpty(next, cursor);
-        // Stay put when everything is filled so a quick correction doesn't jump away.
-        if (n !== null) moveCursor(n);
+        // Always step to the very next sticker (wrapping to the next face), filled or not,
+        // so correcting a sticker flows on just like entering a fresh one.
+        const k = order.indexOf(cursor);
+        if (k >= 0 && order.length > 1) moveCursor(order[(k + 1) % order.length]);
       }
     },
-    // firstEmpty/moveCursor only depend on order and setters
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [cursor, mode, stickers, order],
   );
 
@@ -282,25 +281,30 @@ function Editor() {
             onSelect={(slot) => setCursor(slot)}
           />
 
-          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
-            {COLORS.map((c) => {
-              const over = counts[c] > 9;
-              return (
-                <button
-                  key={c}
-                  onClick={() => fill(c)}
-                  disabled={cursor === null}
-                  className="flex flex-col items-center gap-1 rounded-2xl border border-white/[0.07] bg-black/20 p-2 transition hover:bg-white/[0.06] active:scale-95 disabled:opacity-40"
-                  aria-label={`Fill ${c}`}
-                >
-                  <span className="h-9 w-9 rounded-lg border border-black/30" style={{ background: COLOR_HEX[c] }} />
-                  <span className="text-xs capitalize text-zinc-200">{c}</span>
-                  <span className={`font-mono text-[11px] ${over ? "font-bold text-red-400" : counts[c] === 9 ? "text-emerald-400" : "text-zinc-500"}`}>
-                    {counts[c]}/9
-                  </span>
-                </button>
-              );
-            })}
+          {/* Colour picker: one tight row right under the grid, same width, so your thumb barely moves */}
+          <div className="mx-auto mt-2 grid w-full max-w-[340px] grid-cols-[18px_minmax(0,1fr)_18px] gap-1.5">
+            <div />
+            <div className="grid grid-cols-6 gap-1 rounded-2xl bg-[#15171d] p-1">
+              {COLORS.map((c) => {
+                const over = counts[c] > 9;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => fill(c)}
+                    disabled={cursor === null}
+                    className="flex flex-col items-center gap-0.5 rounded-xl p-0.5 transition hover:bg-white/[0.08] active:scale-90 disabled:opacity-40"
+                    aria-label={`Fill ${c}`}
+                    title={`${c} (${c[0].toUpperCase()})`}
+                  >
+                    <span className="aspect-square w-full rounded-lg border border-black/30" style={{ background: COLOR_HEX[c] }} />
+                    <span className={`font-mono text-[10px] leading-tight ${over ? "font-bold text-red-400" : counts[c] === 9 ? "text-emerald-400" : "text-zinc-500"}`}>
+                      {counts[c]}/9
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div />
           </div>
           {/* On phones the issue panel is below the fold, so surface the first problem right here */}
           {blocking[0] && (

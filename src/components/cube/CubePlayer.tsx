@@ -28,6 +28,14 @@ export interface CubePlayerProps {
   startState?: CubeState;
   /** Colours of the cube being shown (defaults to the standard scheme). */
   palette?: Palette;
+  /** Starting playback speed (1 = normal). */
+  speed?: number;
+  onSpeedChange?: (speed: number) => void;
+  onLoopChange?: (loop: boolean) => void;
+  /** Called when the user presses play or pause (not when playback simply finishes). */
+  onPlayIntent?: (playing: boolean) => void;
+  /** Space toggles play/pause while this player is on screen. */
+  hotkeys?: boolean;
 }
 
 const BASE_MS = 420;
@@ -46,6 +54,11 @@ export default function CubePlayer({
   auf = "",
   startState,
   palette,
+  speed: initialSpeed = 1,
+  onSpeedChange,
+  onLoopChange,
+  onPlayIntent,
+  hotkeys = false,
 }: CubePlayerProps) {
   const holder = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<CubeScene | null>(null);
@@ -72,7 +85,7 @@ export default function CubePlayer({
 
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(autoPlay);
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(initialSpeed);
   const [looping, setLooping] = useState(loop);
   const [showLabels, setShowLabels] = useState(labels);
   const [camView, setCamView] = useState<CameraView>(view);
@@ -87,7 +100,9 @@ export default function CubePlayer({
   const loopRef = useRef(looping);
   const statesRef = useRef(states);
   const movesRef = useRef(moves);
+  const playingRef = useRef(playing);
   useEffect(() => {
+    playingRef.current = playing;
     speedRef.current = speed;
     loopRef.current = looping;
     statesRef.current = states;
@@ -208,7 +223,32 @@ export default function CubePlayer({
     };
   }, [playing, runId, forward, jump]);
 
-  const pause = () => setPlaying(false);
+  const togglePlay = useCallback(() => {
+    const next = !playingRef.current;
+    playingRef.current = next;
+    setPlaying(next);
+    onPlayIntent?.(next);
+  }, [onPlayIntent]);
+
+  useEffect(() => {
+    if (!hotkeys) return;
+    const isTyping = (t: EventTarget | null) => t instanceof HTMLInputElement || t instanceof HTMLSelectElement || t instanceof HTMLTextAreaElement;
+    // Capture phase + preventDefault on both events, so Space never also "clicks" a focused button.
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || isTyping(e.target)) return;
+      e.preventDefault();
+      if (!e.repeat) togglePlay();
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !isTyping(e.target)) e.preventDefault();
+    };
+    window.addEventListener("keydown", down, true);
+    window.addEventListener("keyup", up, true);
+    return () => {
+      window.removeEventListener("keydown", down, true);
+      window.removeEventListener("keyup", up, true);
+    };
+  }, [hotkeys, togglePlay]);
   const n = moves.length;
 
   const clickMove = async (i: number) => {
@@ -245,7 +285,7 @@ export default function CubePlayer({
         )}
         {minimal && (
           <button
-            onClick={() => (playing ? pause() : setPlaying(true))}
+            onClick={togglePlay}
             className="absolute inset-0"
             aria-label={playing ? "Pause" : "Play"}
           />
@@ -286,7 +326,7 @@ export default function CubePlayer({
               <path d="M15 5l-8 7 8 7z" />
             </Ctrl>
             <button
-              onClick={() => (playing ? pause() : setPlaying(true))}
+              onClick={togglePlay}
               className="flex h-9 min-w-[96px] items-center sm:h-10 justify-center gap-2 rounded-full bg-amber-400 px-4 font-semibold text-black hover:bg-amber-300 sm:px-5"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
@@ -305,7 +345,11 @@ export default function CubePlayer({
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
               <select
                 value={speed}
-                onChange={(e) => setSpeed(Number(e.target.value))}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setSpeed(v);
+                  onSpeedChange?.(v);
+                }}
                 className="h-8 rounded-md border border-white/10 bg-zinc-900 px-2 text-xs text-zinc-200"
                 aria-label="Speed"
               >
@@ -315,7 +359,15 @@ export default function CubePlayer({
                 <option value={1.6}>1.6×</option>
                 <option value={2.5}>2.5× fast</option>
               </select>
-              <Toggle on={looping} onClick={() => setLooping((v) => !v)}>Loop</Toggle>
+              <Toggle
+                on={looping}
+                onClick={() => {
+                  setLooping(!looping);
+                  onLoopChange?.(!looping);
+                }}
+              >
+                Loop
+              </Toggle>
               <Toggle on={showLabels} onClick={() => setShowLabels((v) => !v)}>Face letters</Toggle>
               <Toggle on={camView === "bottom"} onClick={() => setCamView((v) => (v === "bottom" ? "standard" : "bottom"))}>
                 See bottom

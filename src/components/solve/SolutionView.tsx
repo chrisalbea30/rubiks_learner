@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CubePlayer from "../cube/CubePlayer";
 import { IsoView, TopView } from "../cube/Diagrams";
 import { paletteOf, type Mode } from "@/lib/cubeInput";
@@ -23,15 +23,43 @@ export default function SolutionView({ solution, method, onMethod, onEdit, mode 
   const [i, setI] = useState(0);
   const [all, setAll] = useState(false);
   const [done, setDone] = useState(false);
+  // Player settings carry over from step to step: pausing stops autoplay on the next step,
+  // and a chosen speed or loop setting sticks until changed.
+  const [prefs, setPrefs] = useState({ autoPlay: true, speed: 1, loop: false });
   const total = steps.reduce((a, s) => a + s.moves, 0);
   const step = steps[Math.min(i, steps.length - 1)];
   const stages = STAGES.slice(STAGES.indexOf(FIRST_STAGE[mode]));
 
-  const go = (k: number) => {
+  const go = (k: number, scroll = true) => {
     setDone(false);
     setI(Math.max(0, Math.min(steps.length - 1, k)));
-    if (typeof window !== "undefined") document.getElementById("step-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (scroll) document.getElementById("step-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  // Left / right arrow keys: previous / next step. On the last step, right arrow marks it finished.
+  const nav = useRef({ i, last: steps.length - 1 });
+  useEffect(() => {
+    nav.current = { i, last: steps.length - 1 };
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.metaKey || e.ctrlKey || e.altKey) return;
+      const n = nav.current;
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (n.i < n.last) {
+          setDone(false);
+          setI(n.i + 1);
+        } else setDone(true);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setDone(false);
+        setI(Math.max(0, n.i - 1));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <div className="space-y-5">
@@ -151,8 +179,17 @@ export default function SolutionView({ solution, method, onMethod, onEdit, mode 
                   palette={paletteOf(step.scheme)}
                   mask={step.mask}
                   view={step.stage === "cross" ? "bottom" : "standard"}
-                  autoPlay
+                  autoPlay={prefs.autoPlay}
+                  speed={prefs.speed}
+                  loop={prefs.loop}
+                  onPlayIntent={(p) => setPrefs((x) => ({ ...x, autoPlay: p }))}
+                  onSpeedChange={(s) => setPrefs((x) => ({ ...x, speed: s }))}
+                  onLoopChange={(l) => setPrefs((x) => ({ ...x, loop: l }))}
+                  hotkeys
                 />
+                <p className="mt-2 hidden text-center text-xs text-zinc-500 sm:block">
+                  Keys: <kbd>←</kbd> <kbd>→</kbd> previous / next step · <kbd>Space</kbd> play / pause
+                </p>
               </div>
               <div className="flex flex-wrap gap-2 lg:col-span-2">
                 <button onClick={() => go(i - 1)} disabled={i === 0} className="rounded-full bg-white/5 px-5 py-2.5 text-sm text-zinc-200 hover:bg-white/10 disabled:opacity-30">

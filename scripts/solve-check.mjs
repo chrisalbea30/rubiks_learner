@@ -50,6 +50,54 @@ await page.getByRole("button", { name: "Full OLL/PLL" }).click();
 await page.waitForTimeout(500);
 check(await page.locator("#step-card").isVisible(), "switching to full OLL/PLL re-plans the solve");
 
+// 1b. Player settings carry over between steps, and keyboard shortcuts work
+{
+  await page.getByRole("button", { name: "Step by step" }).click();
+  await page.getByRole("button", { name: "2-look OLL/PLL" }).click();
+  await page.waitForTimeout(400);
+  const card = page.locator("#step-card");
+  const playBtn = card.getByRole("button", { name: /^(Play|Pause|Replay)$/ });
+  const title = () => card.locator("h2").textContent();
+  await card.getByLabel("Speed").selectOption("0.6");
+  if (!(await playBtn.textContent()).includes("Pause")) await playBtn.click();
+  await playBtn.click(); // the user presses pause
+  const t1 = await title();
+  await page.getByRole("button", { name: /Done, next step/ }).click();
+  await page.waitForTimeout(700);
+  check((await title()) !== t1, "next step opens");
+  check(!(await playBtn.textContent()).includes("Pause"), "paused stays paused on the next step");
+  check((await card.getByLabel("Speed").inputValue()) === "0.6", "chosen speed carries over to the next step");
+  await page.locator("body").click({ position: { x: 5, y: 5 } }); // focus away from buttons
+  await page.keyboard.press("Space");
+  await page.waitForTimeout(150);
+  check((await playBtn.textContent()).includes("Pause"), "Space starts playback");
+  const t2 = await title();
+  await page.keyboard.press("Space");
+  await page.waitForTimeout(150);
+  check(!(await playBtn.textContent()).includes("Pause"), "Space pauses playback");
+  check((await title()) === t2, "Space doesn't also press the focused button");
+  await page.keyboard.press("ArrowRight");
+  await page.waitForTimeout(300);
+  check((await title()) !== t2, "Right arrow goes to the next step");
+  await page.keyboard.press("ArrowLeft");
+  await page.waitForTimeout(300);
+  check((await title()) === t2, "Left arrow goes back");
+}
+
+// 1c. Auto-next keeps moving even when the next stickers are already filled
+{
+  await page.getByRole("button", { name: "← Edit my cube" }).click();
+  await page.getByRole("button", { name: "Try an example" }).click();
+  await page.getByRole("button", { name: /Front sticker 2:/ }).click();
+  const before = await page.locator("button.ring-4").getAttribute("aria-label");
+  const keep = before.split(": ")[1];
+  await page.getByRole("button", { name: `Fill ${keep}` }).click();
+  const after = await page.locator("button.ring-4").getAttribute("aria-label");
+  check(/Front sticker 3:/.test(after), `auto-next moves on after a filled sticker (${before} -> ${after})`);
+  await page.getByRole("button", { name: /Show me how to solve it/ }).click();
+  await page.waitForTimeout(400);
+}
+
 // 2. Manual entry: ten reds is flagged
 await page.getByRole("button", { name: "← Edit my cube" }).click();
 await page.getByRole("button", { name: "Clear all" }).click();
