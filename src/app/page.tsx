@@ -1,69 +1,149 @@
-import Image from "next/image";
+import Link from "next/link";
+import CubePlayer from "@/components/cube/CubePlayer";
+import { IsoView, TopView } from "@/components/cube/Diagrams";
+import Checklist from "@/components/Checklist";
+import { Tip } from "@/components/ui";
+import { SOLVED, applyAlg, caseState } from "@/lib/cube";
+
+const STAGES = [
+  {
+    href: "/notation",
+    step: "Start here",
+    title: "Notation",
+    text: "Learn to read moves like R U R' U'. Every letter is animated on a 3D cube.",
+    thumb: <IsoView state={applyAlg(SOLVED, "R")} />,
+    count: "18 moves",
+  },
+  {
+    href: "/cross",
+    step: "Stage 1",
+    title: "Cross",
+    text: "Four white edges on the bottom, solved by intuition. Includes an optimal-cross trainer.",
+    thumb: <IsoView state={applyAlg(SOLVED, "F2 R U")} mask="cross" from="bottom" />,
+    count: "Intuitive",
+  },
+  {
+    href: "/f2l",
+    step: "Stage 2",
+    title: "F2L",
+    text: "Pair a corner with its edge and insert them together. 17 core cases.",
+    thumb: <IsoView state={caseState("U' R U R' U2 R U' R'")} mask="f2l" />,
+    count: "17 cases",
+  },
+  {
+    href: "/oll",
+    step: "Stage 3",
+    title: "OLL",
+    text: "Make the whole top yellow. Start with 2-look (9 algs), grow to all 57.",
+    thumb: <TopView state={caseState("R U R' U R U2 R'")} mask="oll" />,
+    count: "57 cases",
+  },
+  {
+    href: "/pll",
+    step: "Stage 4",
+    title: "PLL",
+    text: "Move the yellow pieces to their spots. 2-look (6 algs), then all 21.",
+    thumb: <TopView state={caseState("R U R' U' R' F R2 U' R' U' R U R' F'")} arrows />,
+    count: "21 cases",
+  },
+  {
+    href: "/practice",
+    step: "Daily",
+    title: "Practice",
+    text: "Timer with scrambles and averages, plus flash-card drills for OLL and PLL.",
+    thumb: <TopView state={caseState("M2 U M U2 M' U M2")} arrows />,
+    count: "Timer + drills",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div>
+      <section className="grid grid-cols-1 items-center gap-10 pb-16 pt-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div>
+          <div className="mb-3 font-mono text-xs uppercase tracking-[0.25em] text-amber-300">The CFOP method</div>
+          <h1 className="text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+            Learn to speedsolve, <span className="text-amber-300">one move at a time.</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-zinc-400">
+            Every algorithm here plays on a 3D cube you can spin around, slow down and step through move by move. Every case picture is
+            generated from its algorithm, so what you see is exactly what you&apos;ll hold.
           </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/notation" className="rounded-full bg-amber-400 px-6 py-3 font-semibold text-black hover:bg-amber-300">
+              Start with notation
+            </Link>
+            <Link href="/practice" className="rounded-full border border-white/15 px-6 py-3 font-semibold text-white hover:bg-white/5">
+              Open the timer
+            </Link>
+          </div>
+          <div className="mt-8 flex gap-6 font-mono text-sm text-zinc-500">
+            <span><b className="text-zinc-200">C</b>ross</span>
+            <span><b className="text-zinc-200">F</b>2L</span>
+            <span><b className="text-zinc-200">O</b>LL</span>
+            <span><b className="text-zinc-200">P</b>LL</span>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="mx-auto w-full max-w-md">
+          <CubePlayer alg="R U R' U' R' F R2 U' R' U' R U R' F'" minimal autoPlay loop />
+          <p className="mt-2 text-center text-xs text-zinc-500">The T perm, playing on loop. Tap to pause, drag to spin.</p>
         </div>
-      </main>
+      </section>
+
+      <section className="mb-16">
+        <h2 className="mb-5 text-2xl font-bold text-white">The four stages</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {STAGES.map((s) => (
+            <Link
+              key={s.href}
+              href={s.href}
+              className="group flex gap-4 rounded-3xl border border-white/[0.07] bg-white/[0.03] p-5 transition hover:border-amber-400/40 hover:bg-white/[0.05]"
+            >
+              <div className="w-24 shrink-0 transition group-hover:scale-105">{s.thumb}</div>
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{s.step}</div>
+                <div className="text-xl font-bold text-white">{s.title}</div>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-400">{s.text}</p>
+                <div className="mt-2 font-mono text-xs text-amber-300/80">{s.count}</div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div>
+          <h2 className="mb-4 text-2xl font-bold text-white">Learning path</h2>
+          <p className="mb-4 text-zinc-400">Learn in this order. Each step is a big jump in speed without overwhelming your memory.</p>
+          <ol className="space-y-3">
+            {[
+              ["Cross + intuitive F2L + 2-look OLL + 2-look PLL", "Only 15 algorithms. This gets most people under 1 minute, then toward 30 seconds."],
+              ["Full PLL (21)", "PLL comes up every solve and is easy to recognize. Learn 2–3 per week."],
+              ["Full OLL (57)", "Start with the groups you see most often, like the T, P, and L shapes."],
+              ["Advanced F2L", "Learn the remaining cases, insert into back slots without rotating, and practice lookahead."],
+              ["Inspection", "Use the full 15 seconds to plan the cross, then try to plan the first F2L pair too."],
+            ].map(([t, d], i) => (
+              <li key={t} className="flex gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400/15 font-mono text-sm text-amber-300">
+                  {i + 1}
+                </span>
+                <div>
+                  <div className="font-semibold text-zinc-100">{t}</div>
+                  <div className="text-sm text-zinc-400">{d}</div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="space-y-4">
+          <h2 className="mb-4 text-2xl font-bold text-white">Your checklist</h2>
+          <Checklist />
+          <Tip title="Practice tips">
+            Drill new algorithms slowly until they&apos;re smooth, then speed them up. Use finger tricks (flicking U with your index finger) instead of
+            whole-hand turns. Slow, steady solves with no pauses beat fast, jerky ones.
+          </Tip>
+        </div>
+      </section>
     </div>
   );
 }
