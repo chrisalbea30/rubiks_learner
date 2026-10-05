@@ -1,6 +1,6 @@
 import {
   FACES, GREY, NORMALS, STICKERS, pllArrows, stickerColor, topView,
-  type CubeState, type Face, type Mask, type Vec3,
+  type CubeState, type Face, type Mask, type Palette, type Vec3,
 } from "@/lib/cube";
 
 const PLASTIC = "#15171d";
@@ -13,13 +13,15 @@ export function TopView({
   mask = "full",
   arrows = false,
   className = "",
+  palette,
 }: {
   state: CubeState;
   mask?: Mask;
   arrows?: boolean;
   className?: string;
+  palette?: Palette;
 }) {
-  const v = topView(state, mask);
+  const v = topView(state, mask, palette);
   const cell = 10;
   const gap = 1;
   const strip = 3.2;
@@ -105,6 +107,7 @@ export function IsoView({
   from = "top",
   className = "",
   highlight,
+  palette,
 }: {
   state: CubeState;
   mask?: Mask;
@@ -112,6 +115,7 @@ export function IsoView({
   className?: string;
   /** Slot indices to outline. */
   highlight?: number[];
+  palette?: Palette;
 }) {
   const faces: Face[] = from === "top" ? ["U", "F", "R"] : ["D", "F", "R"];
   const view = norm(from === "top" ? [1, 1.05, 1.25] : [1, -1.05, 1.25]);
@@ -143,7 +147,7 @@ export function IsoView({
         const shade = SHADE[s.face] ?? 0;
         return (
           <g key={s.index}>
-            <polygon points={pts} fill={stickerColor(state, s.index, mask)} />
+            <polygon points={pts} fill={stickerColor(state, s.index, mask, palette)} />
             {shade > 0 && <polygon points={pts} fill="#000" opacity={shade} />}
             {hl.has(s.index) && <polygon points={pts} fill="none" stroke="#fff" strokeWidth={0.7} />}
           </g>
@@ -156,7 +160,7 @@ export function IsoView({
 // ---------------------------------------------------------------------------
 // Unfolded net of the whole cube (used for scrambles).
 
-export function NetView({ state, mask = "full", className = "" }: { state: CubeState; mask?: Mask; className?: string }) {
+export function NetView({ state, mask = "full", className = "", palette }: { state: CubeState; mask?: Mask; className?: string; palette?: Palette }) {
   const cell = 10;
   const faceSize = cell * 3 + 2;
   const pos: Record<Face, [number, number]> = { U: [1, 0], L: [0, 1], F: [1, 1], R: [2, 1], B: [3, 1], D: [1, 2] };
@@ -177,7 +181,7 @@ export function NetView({ state, mask = "full", className = "" }: { state: CubeS
                 width={cell - 1}
                 height={cell - 1}
                 rx={1.4}
-                fill={stickerColor(state, s.index, mask)}
+                fill={stickerColor(state, s.index, mask, palette)}
               />
             ))}
           </g>

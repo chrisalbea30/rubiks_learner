@@ -90,6 +90,21 @@ export default function Home() {
         </div>
       </section>
 
+      <Link
+        href="/solve"
+        className="mb-16 flex flex-col gap-4 rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-400/[0.12] to-transparent p-5 transition hover:border-amber-400/60 sm:flex-row sm:items-center sm:p-6"
+      >
+        <div className="w-20 shrink-0 sm:w-24">
+          <TopView state={caseState("R U R' U' R' F R F'")} mask="oll" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold uppercase tracking-wider text-amber-300">Stuck mid-solve?</div>
+          <div className="text-xl font-bold text-white sm:text-2xl">Show me my cube and tell me what to do next</div>
+          <p className="mt-1 text-sm text-zinc-400">Tap in your colours or snap a photo of each side. Get the next step, or the whole solution, animated.</p>
+        </div>
+        <span className="self-start rounded-full bg-amber-400 px-5 py-2.5 font-semibold text-black sm:self-center">Open My Cube →</span>
+      </Link>
+
       <section className="mb-16">
         <h2 className="mb-5 text-2xl font-bold text-white">The four stages</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

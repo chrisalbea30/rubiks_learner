@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export const STAGES = [
-  { href: "/notation", label: "Notation", step: "0" },
-  { href: "/cross", label: "Cross", step: "1" },
-  { href: "/f2l", label: "F2L", step: "2" },
-  { href: "/oll", label: "OLL", step: "3" },
-  { href: "/pll", label: "PLL", step: "4" },
-  { href: "/practice", label: "Practice", step: "⏱" },
+  { href: "/notation", label: "Notation", short: "Moves", step: "0" },
+  { href: "/cross", label: "Cross", short: "Cross", step: "1" },
+  { href: "/f2l", label: "F2L", short: "F2L", step: "2" },
+  { href: "/oll", label: "OLL", short: "OLL", step: "3" },
+  { href: "/pll", label: "PLL", short: "PLL", step: "4" },
+  { href: "/solve", label: "My Cube", short: "Solve", step: "?" },
+  { href: "/practice", label: "Practice", short: "Timer", step: "⏱" },
 ];
 
 export default function Nav() {
@@ -24,8 +25,8 @@ export default function Nav() {
             <span>CubeSchool</span>
           </Link>
           {/* Phones: the page name here, stage links in the bottom bar */}
-          {current && <span className="ml-auto truncate text-sm text-zinc-400 sm:hidden">{current.label}</span>}
-          <nav className="hidden min-w-0 flex-1 gap-1 sm:flex" aria-label="Stages">
+          {current && <span className="ml-auto truncate text-sm text-zinc-400 md:hidden">{current.label}</span>}
+          <nav className="hidden min-w-0 flex-1 gap-1 md:flex" aria-label="Stages">
             {STAGES.map((s) => {
               const active = path.startsWith(s.href);
               return (
@@ -46,10 +47,10 @@ export default function Nav() {
       </header>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0b0c10]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0b0c10]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
         aria-label="Stages"
       >
-        <div className="grid grid-cols-6">
+        <div className="grid grid-cols-7">
           {STAGES.map((s) => {
             const active = path.startsWith(s.href);
             return (
@@ -65,7 +66,7 @@ export default function Nav() {
                 >
                   {s.step}
                 </span>
-                <span className="w-full truncate text-center text-[10px] leading-tight">{s.label}</span>
+                <span className="w-full truncate text-center text-[10px] leading-tight">{s.short}</span>
               </Link>
             );
           })}

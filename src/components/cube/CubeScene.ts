@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { FACES, NORMALS, STICKERS, stickerColor, type CubeState, type Mask, type Vec3 } from "@/lib/cube";
+import { FACE_COLORS, FACES, NORMALS, STICKERS, stickerColor, type CubeState, type Face, type Mask, type Palette, type Vec3 } from "@/lib/cube";
 
 export type CameraView = "standard" | "bottom" | "top";
 
@@ -74,6 +74,10 @@ export class CubeScene {
   private mask: Mask = "full";
   private state: CubeState;
   private view: CameraView = "standard";
+  private palette: Palette = FACE_COLORS;
+  /** Direct per-sticker colours (for showing a cube that is still being entered). */
+  private override: string[] | null = null;
+  private flight: { from: THREE.Vector3; to: THREE.Vector3; start: number } | null = null;
 
   constructor(private container: HTMLElement, state: CubeState) {
     this.state = state;
@@ -163,7 +167,29 @@ export class CubeScene {
   }
 
   private applyColors() {
-    for (let i = 0; i < 54; i++) this.stickerMats[i].color.set(stickerColor(this.state, i, this.mask));
+    for (let i = 0; i < 54; i++)
+      this.stickerMats[i].color.set(this.override ? this.override[i] : stickerColor(this.state, i, this.mask, this.palette));
+  }
+
+  setPalette(palette: Palette) {
+    this.palette = palette;
+    this.applyColors();
+  }
+
+  setStickerColors(colors: string[] | null) {
+    this.override = colors;
+    this.applyColors();
+  }
+
+  /** Glide the camera to look mostly straight at one face (slightly from above-right for depth). */
+  lookAtFace(face: Face) {
+    const n = new THREE.Vector3(...NORMALS[face]);
+    const up = new THREE.Vector3(0, 1, 0);
+    const pos = n.clone().multiplyScalar(10.2);
+    if (face === "U" || face === "D") pos.add(new THREE.Vector3(0.8, 0, 3.4));
+    else pos.add(new THREE.Vector3().crossVectors(up, n).multiplyScalar(1.8)).add(up.multiplyScalar(2.6));
+    pos.setLength(10.7);
+    this.flight = { from: this.camera.position.clone(), to: pos, start: performance.now() };
   }
 
   setLabels(on: boolean) {
@@ -244,6 +270,15 @@ export class CubeScene {
       const t = Math.min(1, (performance.now() - this.anim.start) / this.anim.duration);
       this.anim.pivot.quaternion.setFromAxisAngle(this.anim.axis, this.anim.angle * easeInOut(t));
       if (t >= 1) this.finishAnimation(true);
+    }
+    if (this.flight) {
+      const t = Math.min(1, (performance.now() - this.flight.start) / 450);
+      // Arc around the cube rather than cutting through it
+      const a = this.flight.from.clone().normalize();
+      const q = new THREE.Quaternion().setFromUnitVectors(a, this.flight.to.clone().normalize());
+      const step = new THREE.Quaternion().slerp(q, easeInOut(t));
+      this.camera.position.copy(a.applyQuaternion(step).multiplyScalar(10.7));
+      if (t >= 1) this.flight = null;
     }
     this.controls.update();
     this.renderer.render(this.scene, this.camera);

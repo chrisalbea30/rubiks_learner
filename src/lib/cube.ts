@@ -269,9 +269,64 @@ export function isVisible(mask: Mask, home: number): boolean {
   }
 }
 
-export function stickerColor(state: CubeState, slot: number, mask: Mask = "full"): string {
+/** Hex colour for each face. Defaults to the standard scheme; the solver passes the user's own cube colours. */
+export type Palette = Record<Face, string>;
+
+export function stickerColor(state: CubeState, slot: number, mask: Mask = "full", palette: Palette = FACE_COLORS): string {
   const home = state[slot];
-  return isVisible(mask, home) ? FACE_COLORS[STICKERS[home].face] : GREY;
+  return isVisible(mask, home) ? palette[STICKERS[home].face] : GREY;
+}
+
+// ---------------------------------------------------------------------------
+// Whole-cube orientations (the 24 rotations), used to re-hold the cube and to validate pieces.
+
+export type Matrix = [Vec3, Vec3, Vec3]; // rows
+
+export const mul = (m: Matrix, v: Vec3): Vec3 => [
+  m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
+  m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
+  m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2],
+];
+
+/** All 24 orientation-preserving rotations of the cube, as integer matrices. */
+export const ROTATION_MATRICES: Matrix[] = (() => {
+  const fromFn = (f: (v: Vec3) => Vec3): Matrix => {
+    const cols = [f([1, 0, 0]), f([0, 1, 0]), f([0, 0, 1])];
+    return [0, 1, 2].map((r) => [cols[0][r], cols[1][r], cols[2][r]]) as Matrix;
+  };
+  const key = (m: Matrix) => m.flat().join(",");
+  const seen = new Map<string, Matrix>();
+  const queue: Matrix[] = [fromFn((v) => v)];
+  while (queue.length) {
+    const m = queue.pop()!;
+    if (seen.has(key(m))) continue;
+    seen.set(key(m), m);
+    for (const axis of [0, 1, 2] as Axis[]) queue.push(fromFn((v) => rotate(mul(m, v), axis, 1)));
+  }
+  return [...seen.values()];
+})();
+
+/** The rotation that takes face normal `fromA` to `toA` and `fromB` to `toB`, if one exists. */
+export function findRotation(fromA: Vec3, toA: Vec3, fromB: Vec3, toB: Vec3): Matrix | undefined {
+  const eq = (a: Vec3, b: Vec3) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+  return ROTATION_MATRICES.find((m) => eq(mul(m, fromA), toA) && eq(mul(m, fromB), toB));
+}
+
+/**
+ * Re-describe a state from how the cube is now held: after a whole-cube rotation (y, x...) the
+ * sticker ids are relabelled so the centres read as solved again, and the palette follows the
+ * colours to their new faces. Physically nothing changes; this keeps "solved" checks simple.
+ */
+export function normalizeHeld<T>(state: CubeState, palette: Record<Face, T>): { state: CubeState; palette: Record<Face, T> } {
+  const centerAt = (f: Face) => STICKERS[state[slotAt(NORMALS[f], NORMALS[f])]].face;
+  const gU = centerAt("U");
+  const gF = centerAt("F");
+  if (gU === "U" && gF === "F") return { state, palette };
+  const m = findRotation(NORMALS[gU], NORMALS.U, NORMALS[gF], NORMALS.F)!;
+  const next = state.map((h) => slotAt(mul(m, STICKERS[h].pos), mul(m, STICKERS[h].normal)));
+  const pal = {} as Record<Face, T>;
+  for (const f of FACES) pal[f] = palette[centerAt(f)];
+  return { state: next, palette: pal };
 }
 
 // ---------------------------------------------------------------------------
@@ -285,8 +340,8 @@ export interface TopViewData {
   right: string[];
 }
 
-export function topView(state: CubeState, mask: Mask = "full"): TopViewData {
-  const c = (pos: Vec3, n: Vec3) => stickerColor(state, slotAt(pos, n), mask);
+export function topView(state: CubeState, mask: Mask = "full", palette: Palette = FACE_COLORS): TopViewData {
+  const c = (pos: Vec3, n: Vec3) => stickerColor(state, slotAt(pos, n), mask, palette);
   const idx = [-1, 0, 1];
   return {
     u: idx.map((z) => idx.map((x) => c([x, 1, z], NORMALS.U))),

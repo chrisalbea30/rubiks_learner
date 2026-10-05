@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   SOLVED, applyAlg, applyMove, caseState, invertMove, moveGeometry, parseAlg,
-  type CubeState, type Mask,
+  type CubeState, type Mask, type Palette,
 } from "@/lib/cube";
 import { CubeScene, type CameraView } from "./CubeScene";
 
@@ -24,6 +24,10 @@ export interface CubePlayerProps {
   className?: string;
   /** Extra moves shown after the algorithm, e.g. a final AUF. Rendered as a separate chip. */
   auf?: string;
+  /** Exact starting state (overrides setup), e.g. a step of a solve. */
+  startState?: CubeState;
+  /** Colours of the cube being shown (defaults to the standard scheme). */
+  palette?: Palette;
 }
 
 const BASE_MS = 420;
@@ -40,6 +44,8 @@ export default function CubePlayer({
   minimal = false,
   className = "",
   auf = "",
+  startState,
+  palette,
 }: CubePlayerProps) {
   const holder = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<CubeScene | null>(null);
@@ -48,14 +54,14 @@ export default function CubePlayer({
   const { moves, states, error } = useMemo(() => {
     try {
       const moves = parseAlg(fullAlg);
-      const start: CubeState = setup === undefined ? caseState(fullAlg) : applyAlg(SOLVED, setup);
+      const start: CubeState = startState ?? (setup === undefined ? caseState(fullAlg) : applyAlg(SOLVED, setup));
       const states = [start];
       moves.forEach((m, i) => states.push(applyMove(states[i], m)));
       return { moves, states, error: null };
     } catch (e) {
       return { moves: [], states: [SOLVED], error: (e as Error).message };
     }
-  }, [fullAlg, setup]);
+  }, [fullAlg, setup, startState]);
   const algLen = useMemo(() => {
     try {
       return parseAlg(alg).length;
@@ -100,6 +106,9 @@ export default function CubePlayer({
   }, []);
 
   useEffect(() => sceneRef.current?.setMask(mask), [mask]);
+  useEffect(() => {
+    if (palette) sceneRef.current?.setPalette(palette);
+  }, [palette]);
   useEffect(() => sceneRef.current?.setLabels(showLabels), [showLabels]);
   useEffect(() => sceneRef.current?.setView(camView), [camView]);
 
