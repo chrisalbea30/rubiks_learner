@@ -23,6 +23,20 @@ function getWorker() {
   return worker;
 }
 
+const PHASE2 = new Set(["U", "U'", "U2", "D", "D'", "D2", "R2", "L2", "F2", "B2"]);
+
+/**
+ * Split a two-phase solution where phase 2 begins: from there on it only uses U, D and half turns
+ * of the sides. (The earliest such point; the midway cube then has only top/bottom colours on top
+ * and bottom, every edge oriented, and the middle-layer edges in the middle layer.)
+ */
+export function splitPhases(alg: string): { phase1: string; phase2: string } {
+  const moves = alg.trim().split(/\s+/).filter(Boolean);
+  let k = moves.length;
+  while (k > 0 && PHASE2.has(moves[k - 1])) k--;
+  return { phase1: moves.slice(0, k).join(" "), phase2: moves.slice(k).join(" ") };
+}
+
 export function quickSolve(state: CubeState): Promise<string> {
   return new Promise((resolve, reject) => {
     const id = nextId++;

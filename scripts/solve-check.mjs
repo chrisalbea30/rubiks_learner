@@ -194,6 +194,13 @@ await page.locator("body").click({ position: { x: 5, y: 5 } });
 await page.getByRole("button", { name: "Jump to end" }).click();
 check((await page.getByText(/^\d+\/\d+$/).first().textContent()) === `${n}/${n}`, "player can run the whole solution");
 
+// 6. Quick solve tutorial: live two-phase example renders
+await page.getByRole("link", { name: "Tutorial" }).click();
+await page.getByText(/Total: \d+ moves/).waitFor({ timeout: 20000 });
+const total = await page.getByText(/Total: \d+ moves/).textContent();
+check(/= \d+ in phase 1 \+ \d+ in phase 2/.test(total), `tutorial example splits into two phases (${total.trim()})`);
+await shot("7_tutorial");
+
 check(errors.length === 0, `no page errors${errors.length ? ": " + errors.join(" | ") : ""}`);
 await browser.close();
 console.log(failures ? `\n${failures} failures` : "\nAll My Cube checks passed");
