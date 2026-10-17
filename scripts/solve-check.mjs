@@ -180,6 +180,20 @@ const read = await page.evaluate(() => JSON.parse(localStorage.getItem("cfop-myc
 const front = read.slice(18, 27);
 check(JSON.stringify(front) === JSON.stringify(expected), `photo colours read correctly: ${front.join(", ")}`);
 
+// 5. Quick solve: example scramble -> short solution from the worker
+await page.goto(`${BASE}/quick`, { waitUntil: "networkidle" });
+check(!(await page.getByRole("button", { name: /^OLL/ }).isVisible()), "quick solve hides the stage choice");
+await page.getByRole("button", { name: "Try an example" }).click();
+await page.getByRole("button", { name: "Solve it →" }).click();
+await page.getByText(/moves to solved/).waitFor({ timeout: 20000 });
+const head = await page.getByText(/moves to solved/).textContent();
+const n = Number(head.match(/\d+/)[0]);
+check(n > 0 && n <= 24, `quick solve finds a short solution (${head})`);
+await shot("6_quick");
+await page.locator("body").click({ position: { x: 5, y: 5 } });
+await page.getByRole("button", { name: "Jump to end" }).click();
+check((await page.getByText(/^\d+\/\d+$/).first().textContent()) === `${n}/${n}`, "player can run the whole solution");
+
 check(errors.length === 0, `no page errors${errors.length ? ": " + errors.join(" | ") : ""}`);
 await browser.close();
 console.log(failures ? `\n${failures} failures` : "\nAll My Cube checks passed");

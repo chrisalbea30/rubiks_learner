@@ -4,7 +4,7 @@ import { chromium } from "playwright-core";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3123";
 const OUT = process.argv[2];
-const PAGES = ["/", "/notation", "/cross", "/f2l", "/oll", "/pll", "/solve", "/practice"];
+const PAGES = ["/", "/notation", "/cross", "/f2l", "/oll", "/pll", "/solve", "/quick", "/practice"];
 const WIDTHS = [320, 375, 414, 768, 1024];
 
 const browser = await chromium.launch({ channel: "msedge", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });

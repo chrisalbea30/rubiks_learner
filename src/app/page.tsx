@@ -104,6 +104,13 @@ export default function Home() {
         </div>
         <span className="self-start rounded-full bg-amber-400 px-5 py-2.5 font-semibold text-black sm:self-center">Open My Cube →</span>
       </Link>
+      <p className="-mt-12 mb-16 text-sm text-zinc-500">
+        Just want it solved?{" "}
+        <Link href="/quick" className="text-sky-300 underline underline-offset-2">
+          Quick solve
+        </Link>{" "}
+        gives you one short solution (about 20 moves) for any scramble.
+      </p>
 
       <section className="mb-16">
         <h2 className="mb-5 text-2xl font-bold text-white">The four stages</h2>

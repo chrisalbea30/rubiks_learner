@@ -12,10 +12,12 @@ import { exampleState } from "@/lib/solveExamples";
 import { useIsClient } from "@/lib/useIsClient";
 import CubePreview from "./CubePreview";
 import FaceCapture from "./FaceCapture";
+import QuickSolution from "./QuickSolution";
 import SolutionView from "./SolutionView";
 import { FACE_NAME, NEIGHBORS, editableOrder, faceSlots, facesFor, holdHint } from "./faces";
 
-const KEY = "cfop-mycube-v1";
+export type Variant = "cfop" | "quick";
+const KEYS: Record<Variant, string> = { cfop: "cfop-mycube-v1", quick: "cfop-quick-v1" };
 const EMPTY = "#262a33";
 
 interface Saved {
@@ -26,9 +28,9 @@ interface Saved {
   method: Method;
 }
 
-function loadSaved(): Saved | null {
+function loadSaved(key: string): Saved | null {
   try {
-    const s = JSON.parse(localStorage.getItem(KEY) ?? "null") as Saved | null;
+    const s = JSON.parse(localStorage.getItem(key) ?? "null") as Saved | null;
     return s && Array.isArray(s.stickers) && s.stickers.length === 54 ? s : null;
   } catch {
     return null;
@@ -37,15 +39,21 @@ function loadSaved(): Saved | null {
 
 const darkText = (c: Color | null) => c === "white" || c === "yellow";
 
-export default function MyCube() {
+/**
+ * "cfop": enter any stage of a solve and get taught the CFOP steps.
+ * "quick": enter a whole scrambled cube and get one short solution, no method.
+ */
+export default function MyCube({ variant = "cfop" }: { variant?: Variant }) {
   // Uses saved progress from this browser, so render only on the client.
-  return useIsClient() ? <Editor /> : <div className="h-[32rem] animate-pulse rounded-3xl bg-white/[0.03]" />;
+  return useIsClient() ? <Editor variant={variant} /> : <div className="h-[32rem] animate-pulse rounded-3xl bg-white/[0.03]" />;
 }
 
-function Editor() {
+function Editor({ variant }: { variant: Variant }) {
+  const KEY = KEYS[variant];
+  const quick = variant === "quick";
   const [initial] = useState(() => {
-    const saved = loadSaved();
-    if (saved) return saved;
+    const saved = loadSaved(KEY);
+    if (saved) return quick ? { ...saved, mode: "scratch" as Mode } : saved;
     return { mode: "scratch" as Mode, base: "white" as Color, front: "green" as Color, stickers: startingStickers("scratch", schemeFor("white", "green")), method: "2look" as Method };
   });
   const [mode, setMode] = useState<Mode>(initial.mode);
@@ -80,7 +88,7 @@ function Editor() {
     } catch {
       // storage unavailable; the editor still works for this visit
     }
-  }, [mode, base, front, stickers, method]);
+  }, [KEY, mode, base, front, stickers, method]);
 
   const result = useMemo(() => buildState(stickers, scheme), [stickers, scheme]);
   const errorSlots = useMemo(() => new Set(result.issues.flatMap((i) => i.slots)), [result]);
@@ -191,8 +199,11 @@ function Editor() {
     if (n !== null) moveCursor(n);
   };
 
-  const solution = useMemo(() => (result.state ? solve(result.state, scheme, method) : null), [result.state, scheme, method]);
+  const solution = useMemo(() => (!quick && result.state ? solve(result.state, scheme, method) : null), [quick, result.state, scheme, method]);
 
+  if (view === "solve" && quick && result.state) {
+    return <QuickSolution state={result.state} scheme={scheme} onEdit={() => setView("edit")} />;
+  }
   if (view === "solve" && solution) {
     return (
       <SolutionView
@@ -214,8 +225,8 @@ function Editor() {
     <div className="space-y-6">
       {/* 1. Where are you in the solve, and how are you holding the cube? */}
       <section className="rounded-3xl border border-white/[0.07] bg-white/[0.03] p-4 sm:p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">1 · Where are you?</h2>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">{quick ? "1 · How are you holding it?" : "1 · Where are you?"}</h2>
+        <div className={quick ? "hidden" : "mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"}>
           {MODES.map((m) => (
             <button
               key={m.id}
@@ -374,7 +385,7 @@ function Editor() {
               disabled={!result.state}
               className="mt-3 w-full rounded-2xl bg-amber-400 px-4 py-3 font-semibold text-black transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-zinc-500"
             >
-              Show me how to solve it →
+              {quick ? "Solve it →" : "Show me how to solve it →"}
             </button>
           </div>
           <div className="rounded-3xl border border-white/[0.07] bg-white/[0.03] p-4">

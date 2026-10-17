@@ -33,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Nav />
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-16 pt-6 sm:pb-24 sm:pt-8">{children}</main>
         {/* Extra bottom padding on phones so the fixed tab bar never covers the footer */}
-        <footer className="border-t border-white/[0.06] px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-6 text-center text-xs text-zinc-600 md:pb-6">
+        <footer className="border-t border-white/[0.06] px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-6 text-center text-xs text-zinc-600 lg:pb-6">
 
           Colours: yellow top, green front, orange right, white bottom (standard scheme).
         </footer>

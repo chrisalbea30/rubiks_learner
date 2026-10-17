@@ -10,6 +10,7 @@ export const STAGES = [
   { href: "/oll", label: "OLL", short: "OLL", step: "3" },
   { href: "/pll", label: "PLL", short: "PLL", step: "4" },
   { href: "/solve", label: "My Cube", short: "Solve", step: "?" },
+  { href: "/quick", label: "Quick solve", short: "Quick", step: "⚡" },
   { href: "/practice", label: "Practice", short: "Timer", step: "⏱" },
 ];
 
@@ -25,8 +26,8 @@ export default function Nav() {
             <span>CubeSchool</span>
           </Link>
           {/* Phones: the page name here, stage links in the bottom bar */}
-          {current && <span className="ml-auto truncate text-sm text-zinc-400 md:hidden">{current.label}</span>}
-          <nav className="hidden min-w-0 flex-1 gap-1 md:flex" aria-label="Stages">
+          {current && <span className="ml-auto truncate text-sm text-zinc-400 lg:hidden">{current.label}</span>}
+          <nav className="hidden min-w-0 flex-1 gap-1 lg:flex" aria-label="Stages">
             {STAGES.map((s) => {
               const active = path.startsWith(s.href);
               return (
@@ -47,10 +48,10 @@ export default function Nav() {
       </header>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0b0c10]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0b0c10]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
         aria-label="Stages"
       >
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-8">
           {STAGES.map((s) => {
             const active = path.startsWith(s.href);
             return (
